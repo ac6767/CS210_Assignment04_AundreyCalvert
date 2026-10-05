@@ -1,0 +1,108 @@
+#include "LinkedList.h"
+#include <vector>
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+struct Player
+{
+    string name;
+    int money;
+    Node<Property> *position;
+};
+
+// ---------- Monopoly ----------
+int main()
+{
+    srand(static_cast<unsigned>(time(nullptr)));
+
+
+    cout << "===== MONOPOLY =====\n";
+
+    CircularLinkedList<Property> board;
+    vector<pair<string, int>> boardProperties =
+    {
+        {"GO", 0}, {"Mediterranean Ave", 60}, {"Baltic Ave", 60},
+        {"Reading Railroad", 200}, {"Oriental Ave", 100}, {"Vermont Ave", 100},
+        {"Connecticut Ave", 120}, {"St. Charles Place", 140}, {"States Ave", 140},
+        {"Virginia Ave", 160}
+    };
+
+    for (const auto &p : boardProperties)
+        board.append({p.first, p.second, ""});
+
+    cout << "Board (" << board.size() << " spaces):\n";
+    board.print();
+    cout << endl;
+
+    vector<Player> players =
+    {
+        {"Alice", 1500, board.getHead()},
+        {"Bob",   1500, board.getHead()}
+    };
+
+    const int TURNS = 12;
+    const int GO_BONUS = 200;
+
+    for (int turn = 1; turn <= TURNS; ++turn)
+    {
+        cout << "--- Turn " << turn << " ---\n";
+        for (auto &pl : players)
+        {
+            int roll = rand() % 6 + 1;
+            int passed = 0;
+            pl.position = board.movePointer(pl.position, roll, passed);
+
+            cout << pl.name << " rolled " << roll << " and landed on "
+                 << pl.position->data.name << "\n";
+
+            if (passed > 0)
+            {
+                pl.money += GO_BONUS * passed;
+                cout << "  Passed GO, collected $" << GO_BONUS * passed << "\n";
+            }
+
+            Property &prop = pl.position->data;
+
+            if (prop.cost == 0)
+            {
+                cout << "  Nothing to buy here.\n";
+            }
+            else if (prop.owner.empty())
+            {
+                if (pl.money >= prop.cost)
+                {
+                    pl.money -= prop.cost;
+                    prop.owner = pl.name;
+                    cout << "  " << pl.name << " bought " << prop.name
+                         << " for $" << prop.cost << "\n";
+                }
+                else
+                {
+                    cout << "  " << pl.name << " can't afford " << prop.name << "\n";
+                }
+            }
+            else if (prop.owner == pl.name)
+            {
+                cout << "  " << pl.name << " already owns this property.\n";
+            }
+            else
+            {
+                cout << "  Owned by " << prop.owner << ", can't buy.\n";
+            }
+            cout << "  " << pl.name << " has $" << pl.money << "\n";
+        }
+    }
+
+    cout << "\n===== FINAL RESULTS =====\n";
+    for (const auto &pl : players)
+        cout << pl.name << ": $" << pl.money << ", on "
+             << pl.position->data.name << "\n";
+
+    cout << "\nFinal board:\n";
+    board.print();
+
+    return 0;
+}
